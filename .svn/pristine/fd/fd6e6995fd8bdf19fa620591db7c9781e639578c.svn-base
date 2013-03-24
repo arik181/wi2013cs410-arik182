@@ -1,0 +1,53 @@
+package com.example.a3browser;
+
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.os.Bundle;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.inputmethod.EditorInfo;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.TextView;
+
+public class MainActivity extends Activity {
+
+	@SuppressLint("SetJavaScriptEnabled")
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		
+		final WebView webview = (WebView) findViewById(R.id.webView1);
+		webview.getSettings().setJavaScriptEnabled(true);
+		webview.setWebViewClient(new WebViewClient());
+		webview.loadUrl("http://www.google.com");	
+			
+		TextView.OnEditorActionListener doneListener = new TextView.OnEditorActionListener() {
+			public boolean onEditorAction(TextView textview, int actionId, KeyEvent event) {
+			   if (actionId == EditorInfo.IME_ACTION_GO) {
+				   String prefix = "http://";
+				   String inputurl = textview.getText().toString();
+				   String url = new String();
+				   if (! inputurl.startsWith(prefix)){
+					   url = prefix + inputurl;
+				   }
+				   webview.loadUrl(url);
+				   return false;
+			   }
+			   return true;
+			}
+		};
+
+		final TextView textview = (TextView) findViewById(R.id.editText1);
+		textview.setOnEditorActionListener(doneListener);
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.activity_main, menu);
+		return true;
+	}
+
+}

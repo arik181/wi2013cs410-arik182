@@ -1,0 +1,584 @@
+/*
+ * A game of snake.
+ */
+
+library snake;
+
+import 'dart:collection';
+import 'dart:html';
+import 'dart:math' as math;
+
+const int UP = 0;
+const int DOWN = 1;
+const int LEFT = 2;
+const int RIGHT = 3;
+
+class Location {
+  int _x = 0;
+  int _y = 0;
+  
+  Location(int x, int y) {
+    this._x = x;
+    this._y = y;
+  }
+  
+  int get X => this._x;
+  int get Y => this._y;
+}
+
+class Locatable {
+  Location location;
+  ImageElement _elem;
+  int speed = 1;
+  int spotsize = 25;
+  int historymax = 30;
+  bool collision = false;
+  int _direction = UP;
+  var locationHistory = new Queue<Location>();
+  var directionHistory = new Queue<int>();
+  
+  setImage(String img) {
+    _elem = new ImageElement(src: img);
+  }
+  
+  left(root, Board board) {
+    while (locationHistory.length >= historymax)
+    {
+      locationHistory.removeFirst();
+      directionHistory.removeFirst();
+    }
+    var nextX = (location.X - speed);
+    locationHistory.add(new Location(nextX, location._y));
+    directionHistory.add(_direction);
+    setLocation(root, board, nextX, location.Y);  
+  }
+  
+  right(root, Board board) {
+    while (locationHistory.length >= historymax)
+    {
+      locationHistory.removeFirst();
+      directionHistory.removeFirst();
+    }
+    var nextX = (location.X + speed);
+    locationHistory.add(new Location(nextX, location._y));
+    directionHistory.add(_direction);
+    setLocation(root, board, nextX, location.Y);
+  }
+  
+  up(root, Board board) {
+    while (locationHistory.length >= historymax)
+    {
+      locationHistory.removeFirst();
+      directionHistory.removeFirst();
+    }
+    var nextY = (location.Y - speed);
+    locationHistory.add(new Location(location._x, nextY));
+    directionHistory.add(_direction);
+    setLocation(root, board, location.X, nextY);
+  }
+  
+  down(root, Board board) {
+    while (locationHistory.length >= historymax)
+    {
+      locationHistory.removeFirst();
+      directionHistory.removeFirst();
+    }
+    var nextY = (location.Y + speed);
+    locationHistory.add(new Location(location._x, nextY));
+    directionHistory.add(_direction);
+    setLocation(root, board, location.X, nextY);
+  }
+    
+  initLocation(root, x, int y) {
+    location = new Location(x,y);
+    _elem.style.position = 'absolute';
+    _elem.style.left = '${x}px';
+    _elem.style.top = '${y}px';
+    _elem.style.visibility = 'hidden';
+    root.nodes.add(_elem);
+  }
+  
+  setLocation(root, Board board, int x, int y) {
+    location._x = x;
+    location._y = y;
+    _elem.style.left = '${x}px';
+    _elem.style.top = '${y}px';
+    _collisioncheck(root,board,x,y);
+  }
+  
+  increaseSpeed() {
+    ++speed;
+    switch(speed) {
+      case 2:
+        historymax = 18;
+        break;
+      case 3:
+        historymax = 16;
+        break;
+      case 4:
+        historymax = 12;
+        break;
+      case 5:
+      default:
+        historymax = 10;
+        break;
+    }
+  }
+  
+  _collisioncheck(root, board, x, y) {
+    if (x < 0 || 
+        x > board.getWidth() ||
+        y < 0 ||
+        y > board.getHeight()) {
+      collision = true;
+    }
+  }
+  
+  goLeft() {
+    _direction = LEFT;
+  }
+  
+  goRight() {
+    _direction = RIGHT;
+  }
+  
+  goUp() {
+    _direction = UP;
+  }
+  
+  goDown() {
+    _direction = DOWN;
+  }
+
+  get getDirection => _direction;
+  get getCollision => collision;
+  get getLocation => location;
+  get getX => location._x;
+  get getY => location._y;
+  get getLocationHistory => locationHistory;
+  get getDirectionHistory => directionHistory;
+  
+  bool getOverlap(Locatable neighbor) {
+    var offset = 25;
+    bool xCollision = false;
+    bool yCollision = false;
+    var neighborLocation = neighbor.getLocation;
+    if (neighborLocation._x < location._x + offset && // his left, my right
+        neighborLocation._x + offset > location._x)   // his right, my left
+      xCollision = true;
+    if (neighborLocation._y < location._y + offset && // his top, my bottom
+        neighborLocation._y + offset > location._y)   // his bottom, my top
+      yCollision = true;
+    if (xCollision && yCollision)
+      return (xCollision && yCollision);
+    else return false;
+  }
+  
+  display() {
+    _elem.style.visibility = 'visible';
+  }
+  
+  undisplay() {
+    _elem.style.visibility = 'hidden';
+  }
+}
+
+class Snake {
+  Element root;
+  SegmentQueue _SegmentQueue;
+  Head _Head;
+  bool collision = false;
+  int size = 1;
+  
+  Snake(root,Board board) {
+    var random = new math.Random();
+    int boardwidth = board.getWidth();
+    int boardheight = board.getHeight();
+    int x = random.nextInt(boardwidth);
+    int y = random.nextInt(boardheight);
+    _Head = new Head();
+    _Head.initLocation(root,x,y);
+    _Head.setInitialDirection(board);
+    _SegmentQueue = new SegmentQueue();
+  }
+
+  goLeft() {
+    _Head.goLeft();
+  }
+  
+  goRight() {
+    _Head.goRight();
+  }
+  
+  goUp() {
+    _Head.goUp();
+  }
+  
+  goDown() {
+    _Head.goDown();
+  }
+  
+  grow(root) { 
+    _SegmentQueue.grow(root, _Head);
+  }
+  
+  setLocation(root, board, x,y) {
+    _Head.setLocation(root, board, x, y);
+  }
+  
+  get getHead => _Head;
+  get getSize => size;
+  get getWallCollision => collision;
+  increaseSize() => ++size;
+  
+  increaseSpeed() {
+    _Head.increaseSpeed();
+    _SegmentQueue.increaseSpeed();
+  }
+  
+  bool tick(board) {
+    _Head.tick(root, board);
+    if (_Head.getCollision) {
+      collision = true;
+    }
+    if (!_SegmentQueue.tick(root, board, _Head)) {
+      return false;
+    }
+    return true;
+  }  
+
+  display() {
+    _Head.display();
+    _SegmentQueue.display();
+  }
+}
+
+class SegmentQueue {
+  var queue = new Queue<Segment>();
+  
+  SegmentQueue() {
+  }
+  
+  grow(root, Head head) {
+    queue.add(new Segment());
+    if (queue.length == 1) {
+      queue.last.initLocation(root,head.getX,head.getY);
+      queue.last.setInitialDirection(head.getDirection);
+    }
+    else if (queue.length >= 2 ) {
+      queue.last.initLocation(root, queue.first.getX, queue.first.getY);
+      queue.last.setInitialDirection(queue.last.getDirection);
+    }
+  }
+  
+  increaseSpeed() {
+    Segment segment;
+    for ( segment in queue ) {
+      segment.increaseSpeed();
+    }
+  }
+  
+  bool tick(root, Board board, Head head) {
+    Segment segment;
+    Locatable previous = head;
+    for ( segment in queue ) 
+    { 
+      if (!segment.tick(root, board, head, previous)){
+        return false;
+      }
+      previous = segment;      
+    }
+    return true;
+  }
+  
+  display() {
+    Segment segment;
+    for ( segment in queue ) 
+    { 
+      segment.display();
+    }
+  }
+}
+
+class Segment extends Locatable {
+  static const String snakestring = "images/snake.png";
+  bool _fresh;
+  
+  Segment() {
+    setImage(snakestring);
+    _fresh = true;
+  }
+  
+  setInitialDirection(int direction) {
+      _direction = direction;
+  }
+  
+  changeDirection(int direction) {
+      _direction = direction;
+  }
+  
+  bool tick(root, Board board, Head head, Locatable leader) {
+    if (_fresh && 
+        !getOverlap(leader)
+        ) {
+        // The new body segment no longer
+        // overlaps with the previous segment, and
+        // is now ready to move.
+        _fresh = false;  
+    }
+    
+    if (!_fresh) {
+      location = leader.getLocationHistory.first;
+      if ( leader != head && getOverlap(head)) {
+        return false;
+      }
+      switch(_direction) {
+        case LEFT:
+          left(root, board);
+          break;
+        case RIGHT:
+          right(root, board);
+          break;
+        case UP:
+          up(root, board);
+          break;
+        case DOWN:
+          down(root, board);
+          break;
+        default:
+          break;
+      }
+    }
+    return true;
+  }
+}
+
+class Head extends Locatable {
+  static const String headstring = "images/head.png";
+ 
+  Head() {
+    setImage(headstring);
+  } 
+ 
+  setInitialDirection(board) {
+      _direction = (location.Y > board.center) ? UP : DOWN;
+  }
+  
+  tick(root, board) {
+    switch(_direction) {
+      case LEFT:
+        left(root, board);
+        break;
+      case RIGHT:
+        right(root, board);
+        break;
+      case UP:
+        up(root, board);
+        break;
+      case DOWN:
+        down(root, board);
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+class Apple extends Locatable {
+  static const String applestring = "images/apple.png";
+
+  Apple() {
+    setImage(applestring);
+  }
+  
+  tick() {
+    // TODO
+  }
+}
+
+class AppleList {
+  var list = new List<Apple>();
+  int numapples = 5;
+  
+  AppleList(root, Board board) {
+    addApples(root, board);
+  }
+  
+  bool getFoodCollision(Head head, Snake snake) {
+    var apple;
+    for (apple in list) {
+      if (apple.getOverlap(head)) {
+        apple.undisplay();
+        list.removeMatching((e) => e.getOverlap(head));
+        snake.increaseSize();
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  tick(root, Board board) {
+    if (list.isEmpty) {
+      addApples(root, board);
+    }
+  }
+  
+  addApples(root, Board board) {
+    var random = new math.Random();
+    int i;
+    for (i=0;i<numapples;++i) {
+      list.add(new Apple());
+    } 
+    
+    Apple apple;
+    for (apple in list) {
+      int boardwidth = board.getWidth();
+      int boardheight = board.getHeight();
+      int x = random.nextInt(boardwidth);
+      int y = random.nextInt(boardheight);
+      apple.initLocation(root,x,y);
+    }
+  }
+  
+  display() {
+    Apple apple;
+    for ( apple in list ) 
+    { 
+      apple.display();
+    }
+  }
+}
+
+class Board {
+  int _width;
+  int _height;
+  int _size;
+  
+  Board(Element root, this._width, this._height) {
+    _size = _width * _height;
+  }
+  
+  getSize() => this._size;
+  getWidth() => this._width;
+  getHeight() => this._height;
+  num get center => (_height / 2).abs() - 1;
+  setSize(width, height) {
+    this._width = width;
+    this._height = height;
+  }
+}
+
+class Game {
+  Board board;
+  Snake snake;
+  AppleList apples;
+  DivElement root;
+  DateTime prevtime;
+  num boardwidth = 576;
+  num boardheight = 576;
+  var currentframe;
+  bool go = false;
+  
+  Game() {
+    root = query("#container");
+    root.style.position = 'relative';
+    root.style.marginRight = 'auto';
+    root.style.marginLeft = 'auto';
+    document.body.nodes.add(root);
+    board = new Board(root, boardwidth,boardheight);
+    snake = new Snake(root, board);
+    apples = new AppleList(root, board);
+  }
+
+  start() {
+    go = true;
+    var t = query("#text");
+    t.text = "";
+    query("#text")
+    ..onClick.listen((e) => "");
+    prevtime = new DateTime.now();
+    window.onKeyDown.listen(getKeys);
+    window.onKeyUp.listen(getKeys);
+    window.onKeyPress.listen(getKeys);
+    window.requestAnimationFrame(tick);
+  }
+
+  stop() {
+    window.cancelAnimationFrame(currentframe);
+    go = false;
+    query("#text")
+    ..onClick.listen((e) => start());
+  }
+  
+  reset() {
+    // TODO
+  }
+  
+  tick(e) {
+    var currenttime = new DateTime.now();
+    if ( currenttime.millisecond != prevtime.millisecond ) {
+      prevtime = currenttime;
+      if (!snake.tick(board) || 
+          snake.getWallCollision) {
+        stop();
+        reset();
+      }
+      
+      if (apples.getFoodCollision(snake.getHead, snake)) {
+        snake.grow(root);
+        if (snake.size == 5 ||
+            snake.size == 10 ||
+            snake.size == 15)
+          snake.increaseSpeed();
+      }
+        
+      apples.tick(root, board);
+      apples.display();
+      snake.display();
+    }
+    if (go)
+      currentframe = window.requestAnimationFrame(tick);
+  }
+  
+  getKeys(e)
+  {
+    switch(e.keyCode)
+    {
+      case KeyCode.DOWN:
+      case KeyCode.S:
+        snake.goDown();
+        break;
+      case KeyCode.LEFT:
+      case KeyCode.A:
+        snake.goLeft();
+        break;
+      case KeyCode.UP:
+      case KeyCode.W:
+        snake.goUp();
+        break;
+      case KeyCode.RIGHT:
+      case KeyCode.D:
+        snake.goRight();
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+class Page {
+  Page() {
+    query("#text")
+    ..text = "Click to begin!";
+  }
+}
+
+void main() {
+  Page page = new Page();
+  Game game = new Game();
+
+  query("#text")
+  ..onClick.listen((e) => game.start());
+}
+
+

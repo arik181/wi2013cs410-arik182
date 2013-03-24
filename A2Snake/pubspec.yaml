@@ -1,0 +1,7 @@
+name:  snake
+description:  A snake game written in google Dart
+
+dependencies:
+  browser: any
+#  js: any
+#  unittest: any

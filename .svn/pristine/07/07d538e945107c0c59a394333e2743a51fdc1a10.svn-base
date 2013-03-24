@@ -1,0 +1,301 @@
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.HeadlessException;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.net.MalformedURLException;
+
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JEditorPane;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
+import javax.swing.JList;
+import javax.swing.SwingConstants;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
+
+@SuppressWarnings("serial")
+public class BrowserFrame extends JFrame {
+	private JTextField url;
+	private String homepage = "http://web.cecs.pdx.edu/~xie/";
+	// private String homepage = "http://www.google.com";
+	private JEditorPane browserWindowView;
+	private JButton btnBack;
+	private JButton btnForward;
+	private JButton btnHome;
+	private JButton btnFavorites;
+	private JLabel lblStatus;
+	private BrowserHistory history;
+	private String oldurl;
+	private JSplitPane splitPane;
+	private JList list;
+	private JTabbedPane tabbedPane;
+
+	public BrowserFrame(String arg0) throws HeadlessException {
+		this.setSize(600, 400);
+		this.setLocationRelativeTo(null);
+		this.setExtendedState(Frame.MAXIMIZED_BOTH);
+		this.setResizable(true);
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		getContentPane().setLayout(new BorderLayout(0, 0));
+
+		JPanel panel = new JPanel();
+		getContentPane().add(panel);
+		GridBagLayout gbl_panel = new GridBagLayout();
+		gbl_panel.columnWidths = new int[] { 770, 0 };
+		gbl_panel.rowHeights = new int[] { 33, 0, 33, 0 };
+		gbl_panel.columnWeights = new double[] { 1.0, Double.MIN_VALUE };
+		gbl_panel.rowWeights = new double[] { 0.0, 1.0, 0.0, Double.MIN_VALUE };
+		panel.setLayout(gbl_panel);
+
+		JPanel urlbar = new JPanel();
+		urlbar.setAlignmentY(Component.TOP_ALIGNMENT);
+		GridBagConstraints gbc_urlbar = new GridBagConstraints();
+		gbc_urlbar.fill = GridBagConstraints.HORIZONTAL;
+		gbc_urlbar.anchor = GridBagConstraints.NORTH;
+		gbc_urlbar.insets = new Insets(0, 0, 5, 0);
+		gbc_urlbar.gridx = 0;
+		gbc_urlbar.gridy = 0;
+		panel.add(urlbar, gbc_urlbar);
+		GridBagLayout gbl_urlbar = new GridBagLayout();
+		gbl_urlbar.columnWidths = new int[] { 0, 0, 59, 166, 63, 0, 0, 0, 0, 0,
+				0 };
+		gbl_urlbar.rowHeights = new int[] { -1, 0 };
+		gbl_urlbar.columnWeights = new double[] { 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+				0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE };
+		gbl_urlbar.rowWeights = new double[] { 0.0, Double.MIN_VALUE };
+		urlbar.setLayout(gbl_urlbar);
+
+		btnBack = new JButton("Back");
+		btnBack.addActionListener(new BackHandler());
+		this.btnBack.setEnabled(false);
+		GridBagConstraints gbc_btnBack = new GridBagConstraints();
+		gbc_btnBack.insets = new Insets(0, 0, 0, 5);
+		gbc_btnBack.gridx = 0;
+		gbc_btnBack.gridy = 0;
+		urlbar.add(btnBack, gbc_btnBack);
+
+		btnForward = new JButton("Forward");
+		btnForward.addActionListener(new ForwardHandler());
+		this.btnForward.setEnabled(false);
+		GridBagConstraints gbc_btnForward = new GridBagConstraints();
+		gbc_btnForward.insets = new Insets(0, 0, 0, 5);
+		gbc_btnForward.gridx = 1;
+		gbc_btnForward.gridy = 0;
+		urlbar.add(btnForward, gbc_btnForward);
+
+		btnHome = new JButton("home");
+		btnHome.addActionListener(new HomeHandler());
+		GridBagConstraints gbc_btnHome = new GridBagConstraints();
+		gbc_btnHome.anchor = GridBagConstraints.NORTHWEST;
+		gbc_btnHome.insets = new Insets(0, 0, 0, 5);
+		gbc_btnHome.gridx = 2;
+		gbc_btnHome.gridy = 0;
+		urlbar.add(btnHome, gbc_btnHome);
+
+		url = new JTextField();
+		url.setText(homepage);
+		oldurl = homepage;
+		history = new BrowserHistory();
+		GridBagConstraints gbc_url = new GridBagConstraints();
+		gbc_url.fill = GridBagConstraints.HORIZONTAL;
+		gbc_url.insets = new Insets(0, 0, 0, 5);
+		gbc_url.gridx = 3;
+		gbc_url.gridy = 0;
+		urlbar.add(url, gbc_url);
+		url.setColumns(20);
+
+		JCheckBox chckbxFavorite = new JCheckBox("favorite");
+		GridBagConstraints gbc_chckbxFavorite = new GridBagConstraints();
+		gbc_chckbxFavorite.fill = GridBagConstraints.HORIZONTAL;
+		gbc_chckbxFavorite.insets = new Insets(0, 0, 0, 5);
+		gbc_chckbxFavorite.gridx = 4;
+		gbc_chckbxFavorite.gridy = 0;
+		urlbar.add(chckbxFavorite, gbc_chckbxFavorite);
+
+		btnFavorites = new JButton("Favorites");
+		btnFavorites.addActionListener(new FavoritesHandler());
+		GridBagConstraints gbc_btnFavorites = new GridBagConstraints();
+		gbc_btnFavorites.insets = new Insets(0, 0, 0, 5);
+		gbc_btnFavorites.gridx = 5;
+		gbc_btnFavorites.gridy = 0;
+		urlbar.add(btnFavorites, gbc_btnFavorites);
+
+		JButton btnSettings = new JButton("Settings");
+		GridBagConstraints gbc_btnSettings = new GridBagConstraints();
+		gbc_btnSettings.insets = new Insets(0, 0, 0, 5);
+		gbc_btnSettings.gridx = 6;
+		gbc_btnSettings.gridy = 0;
+		urlbar.add(btnSettings, gbc_btnSettings);
+
+		try {
+			browserWindowView = new JEditorPane(url.getText());
+			browserWindowView.setEditable(false);
+			browserWindowView.addHyperlinkListener(new HyperlinkHandler());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		splitPane = new JSplitPane();
+		splitPane.setContinuousLayout(true);
+		splitPane.setOneTouchExpandable(true);
+		GridBagConstraints gbc_splitPane = new GridBagConstraints();
+		gbc_splitPane.insets = new Insets(0, 0, 5, 0);
+		gbc_splitPane.fill = GridBagConstraints.BOTH;
+		gbc_splitPane.gridx = 0;
+		gbc_splitPane.gridy = 1;
+		panel.add(splitPane, gbc_splitPane);
+		
+		list = new JList();
+		splitPane.setLeftComponent(list);
+		
+		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		splitPane.setRightComponent(tabbedPane);
+
+		tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+		tabbedPane.add(new JScrollPane(browserWindowView));
+		tabbedPane.setTitleAt(0, oldurl);
+
+		tabbedPane.setFocusable(false);
+		
+		JPanel status = new JPanel();
+		FlowLayout flowLayout = (FlowLayout) status.getLayout();
+		flowLayout.setAlignment(FlowLayout.LEFT);
+		GridBagConstraints gbc_status = new GridBagConstraints();
+		gbc_status.fill = GridBagConstraints.HORIZONTAL;
+		gbc_status.gridx = 0;
+		gbc_status.gridy = 2;
+		panel.add(status, gbc_status);
+
+		lblStatus = new JLabel("status");
+		lblStatus.setVerticalAlignment(SwingConstants.BOTTOM);
+		status.add(lblStatus);
+
+		url.addActionListener(new URLHandler());
+
+		this.setVisible(true);
+	}
+
+	public class BackHandler implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			setBrowserPage(history.back(oldurl));
+			oldurl = url.getText();
+		}
+	}
+
+	public class ForwardHandler implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			setBrowserPage(history.forward(oldurl));
+			oldurl = url.getText();
+		}
+	}
+
+	public class HomeHandler implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			history.go(url.getText());
+			setBrowserPage(homepage);
+			history.clearFuture();
+			btnForward.setEnabled(false);
+			oldurl = url.getText();
+
+		}
+	}
+
+	public class URLHandler implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			String newurl = url.getText();
+			history.go(oldurl);
+			setBrowserPage(newurl);
+			history.clearFuture();
+			btnForward.setEnabled(false);
+			oldurl = url.getText();
+		}
+	}
+
+	public class HyperlinkHandler implements HyperlinkListener {
+		@Override
+		public void hyperlinkUpdate(HyperlinkEvent he) {
+			if (he.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+				String newurl = he.getURL().toExternalForm();
+				history.go(oldurl);
+				setBrowserPage(newurl);
+				history.clearFuture();
+				btnForward.setEnabled(false);
+				oldurl = url.getText();
+			}
+		}
+	}
+	
+	public class FavoritesHandler implements ActionListener {
+		private boolean isSplit = false;
+		@Override
+		public void actionPerformed(ActionEvent e) {
+
+			if (isSplit == false) {
+				splitPane.getLeftComponent().setMinimumSize(new Dimension());
+				splitPane.setDividerLocation(0.15d);
+				isSplit = true;
+			} else {
+				splitPane.getLeftComponent().setMinimumSize(new Dimension());
+				splitPane.setDividerLocation(0.0d);
+				isSplit = false;
+			}
+		}
+	}
+	
+	public void setBrowserPage(String newurl) {
+		try {
+			browserWindowView.setPage(newurl);
+			url.setText(newurl);
+			lblStatus.setText(newurl); 
+		} catch (MalformedURLException mue) {
+			String errstatus = "Unable to parse malformed URL";
+			mue.printStackTrace();
+			lblStatus.setText(errstatus);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		if (history.noHistory()) {
+			btnBack.setEnabled(false);
+		} else {
+			btnBack.setEnabled(true);
+		}
+
+		if (history.noFuture()) {
+			btnForward.setEnabled(false);
+		} else {
+			btnForward.setEnabled(true);
+		}
+	}
+
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		new BrowserFrame("A1 Browser");
+
+	}
+
+	public JTabbedPane getTabbedPane() {
+		return tabbedPane;
+	}
+}

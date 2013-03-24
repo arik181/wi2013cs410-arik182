@@ -1,0 +1,70 @@
+import java.util.EmptyStackException;
+import java.util.Stack;
+
+public class BrowserHistory {
+	private Stack<String> history;
+	private Stack<String> future;
+	
+	public BrowserHistory() {
+		history = new Stack<String>();
+		future = new Stack<String>();
+	}
+	
+	public void go(String oldpage) {
+		history.push(oldpage);
+	}
+	
+	public String back(String page) {
+		String newpage = null;
+		try {
+			if (hasHistory()) {
+				newpage = history.pop();
+				future.push(page);
+			}
+		} catch (EmptyStackException e) {
+			e.printStackTrace();
+		}
+		return newpage;
+	}
+	
+	public String forward(String page) {
+		String newpage = null;
+		try {
+			newpage = future.pop();
+			history.push(page);
+		} catch (EmptyStackException e) {
+			e.printStackTrace();
+		}
+		return newpage;
+	}
+	
+	public boolean hasHistory() {
+		return ! history.isEmpty();
+	}
+	
+	public boolean hasFuture() {
+		return ! future.isEmpty();
+	}
+	
+	public boolean noHistory() {
+		return history.isEmpty();
+	}
+	
+	public boolean noFuture() {
+		return future.isEmpty();
+	}
+	
+	public void clearFuture() {
+		while ( hasFuture() ) {
+			future.pop();
+		}
+	}
+	
+	public String getBack() {
+		return history.peek();
+	}
+	
+	public String getForward() {
+		return future.peek();
+	}
+}
